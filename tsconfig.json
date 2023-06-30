@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "module": "commonjs",
+      "outDir": "dist",
+      "types": ["node"],
+      "lib": ["es6"],
+      "esModuleInterop": true
+    },
+    "include": ["src"]
+  }
+  
