@@ -1,16 +1,19 @@
-import axios from 'axios';
-import { execSync } from 'child_process';
-import * as dotenv from 'dotenv';
-import fs from 'fs';
+import axios from "axios";
+import { execSync } from "child_process";
+import * as dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
-const order = 'date';
+const order = "date";
 const perPage = 25;
 const apiUrl = `https://api.koinly.io/api/transactions?per_page=${perPage}&order=${order}&page=`;
 const authToken = process.env.AUTH_TOKEN;
 const portfolioToken = process.env.PORTOFILIO_ID;
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+const cookies = process.env.COOKIES;
+const userAgent =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
+const DEBUG = process.env.DEBUG === "true" || false;
 
 async function getKoinlyTransactions(): Promise<Transactions> {
   let page = 0;
@@ -20,7 +23,7 @@ async function getKoinlyTransactions(): Promise<Transactions> {
     let response = null;
 
     do {
-      console.log('page:', page)
+      console.log("page:", page);
       // response = await getUsingAxios(response);
       response = getResponseUsingCurl(response);
       const transactions: Transactions = response.transactions;
@@ -28,10 +31,13 @@ async function getKoinlyTransactions(): Promise<Transactions> {
       page++;
     } while (response.transactions.length > 0);
 
-    console.log('allTransactions:', allTransactions.length);
+    console.log("allTransactions:", allTransactions.length);
     return allTransactions;
   } catch (error) {
-    console.error('Error retrieving transactions:', error.response?.data ?? error.message);
+    console.error(
+      "Error retrieving transactions:",
+      error.response?.data ?? error.message
+    );
     throw error;
   }
 
@@ -39,11 +45,11 @@ async function getKoinlyTransactions(): Promise<Transactions> {
     response = await axios.get(apiUrl, {
       // params: { order, page },
       headers: {
-        'accept': 'application/json, text/plain, */*',
-        'cookie': process.env.COOKIE,
-        'user-agent': userAgent,
-        'x-auth-token': authToken,
-        'x-portfolio-token': portfolioToken
+        accept: "application/json, text/plain, */*",
+        cookie: process.env.COOKIE,
+        "user-agent": userAgent,
+        "x-auth-token": authToken,
+        "x-portfolio-token": portfolioToken,
       },
     });
     return response.data;
@@ -53,10 +59,14 @@ async function getKoinlyTransactions(): Promise<Transactions> {
     const curlCommand = `
       curl --location '${apiUrl}${page}'  \
       --header 'accept: application/json, text/plain, */*' \
-      --header 'cookie: ${process.env.COOKIE}' \
+      --header 'cookie: ${cookies}' \
       --header 'user-agent: ${userAgent}' \
       --header 'x-auth-token: ${authToken}' \
       --header 'x-portfolio-token: ${portfolioToken}'`;
+
+    if (DEBUG) {
+      console.log("curlCommand:", curlCommand);
+    }
 
     const curlReponse = execSync(curlCommand);
     response = JSON.parse(curlReponse.toString());
@@ -64,7 +74,7 @@ async function getKoinlyTransactions(): Promise<Transactions> {
   }
 }
 
-const csvFilePath = "/tmp/txns.csv"
+const csvFilePath = "/tmp/txns.csv";
 getKoinlyTransactions()
   .then((transactions: Transactions) => {
     // Create the CSV content from the transactions data
@@ -96,17 +106,17 @@ getKoinlyTransactions()
           transaction.fee_worth,
           transaction.gain,
           transaction.label,
-          transaction.description?.replace(/\n/g, ' '),
+          transaction.description?.replace(/\n/g, " "),
           transaction.synced,
           transaction.manual,
           transaction.txhash,
           transaction.txsrc,
           transaction.txdest,
           transaction.txurl,
-        ].join(',');
+        ].join(",");
         return transactionString;
       })
-      .join('\n');
+      .join("\n");
 
     // Add the titles to the CSV content
     const csvContentWithTitles = `${titles()}\n${csvContent}`;
@@ -114,7 +124,7 @@ getKoinlyTransactions()
     // Write the CSV content to the file
     fs.writeFile(csvFilePath, csvContentWithTitles, (err) => {
       if (err) {
-        console.error('Error writing CSV file:', err);
+        console.error("Error writing CSV file:", err);
       } else {
         console.log(`CSV file '${csvFilePath}' has been created successfully.`);
       }
@@ -122,40 +132,40 @@ getKoinlyTransactions()
 
     function titles() {
       return [
-        'date',
-        'id',
-        'type',
-        'from.amount',
-        'from.currency.symbol',
-        'from.wallet.name',
-        'from.cost_basis',
-        'from.source',
-        'to.amount',
-        'to.currency.symbol',
-        'to.wallet.name',
-        'to.cost_basis',
-        'to.source',
-        'fee.amount',
-        'fee.currency.symbol',
-        'fee.wallet.name',
-        'fee.cost_basis',
-        'fee.source',
-        'net_value',
-        'fee_value',
-        'net_worth.amount',
-        'fee_worth',
-        'gain',
-        'label',
-        'description',
-        'synced',
-        'manual',
-        'txhash',
-        'txsrc',
-        'txdest',
-        'txurl',
-      ].join(',');
+        "date",
+        "id",
+        "type",
+        "from.amount",
+        "from.currency.symbol",
+        "from.wallet.name",
+        "from.cost_basis",
+        "from.source",
+        "to.amount",
+        "to.currency.symbol",
+        "to.wallet.name",
+        "to.cost_basis",
+        "to.source",
+        "fee.amount",
+        "fee.currency.symbol",
+        "fee.wallet.name",
+        "fee.cost_basis",
+        "fee.source",
+        "net_value",
+        "fee_value",
+        "net_worth.amount",
+        "fee_worth",
+        "gain",
+        "label",
+        "description",
+        "synced",
+        "manual",
+        "txhash",
+        "txsrc",
+        "txdest",
+        "txurl",
+      ].join(",");
     }
   })
   .catch((error) => {
-    console.error('Error retrieving transactions from Koinly:', error);
+    console.error("Error retrieving transactions from Koinly:", error);
   });
