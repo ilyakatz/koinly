@@ -1,44 +1,66 @@
 import axios from 'axios';
+import { execSync } from 'child_process';
 import * as dotenv from 'dotenv';
 import fs from 'fs';
 
 dotenv.config();
 
-const apiUrl = 'https://api.koinly.io/api/transactions';
 const order = 'date';
+const perPage = 25;
+const apiUrl = `https://api.koinly.io/api/transactions?per_page=${perPage}&order=${order}&page=`;
 const authToken = process.env.AUTH_TOKEN;
 const portfolioToken = process.env.PORTOFILIO_ID;
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
 
 async function getKoinlyTransactions(): Promise<Transactions> {
-  let page = 1;
+  let page = 0;
   let allTransactions: Transactions = [];
 
   try {
     let response = null;
 
     do {
-      response = await axios.get(apiUrl, {
-        params: { order, page },
-        headers: {
-          'user-agent': userAgent,
-          'x-auth-token': authToken,
-          'x-portfolio-token': portfolioToken,
-          'cookie': process.env.COOKIE
-        },
-      });
-
-      const transactions: Transactions = response.data.transactions;
-      allTransactions = allTransactions.concat(transactions);
-
-      page++;
       console.log('page:', page)
-    } while (response.data.transactions.length > 0);
+      // response = await getUsingAxios(response);
+      response = getResponseUsingCurl(response);
+      const transactions: Transactions = response.transactions;
+      allTransactions = allTransactions.concat(transactions);
+      page++;
+    } while (response.transactions.length > 0);
 
+    console.log('allTransactions:', allTransactions.length);
     return allTransactions;
   } catch (error) {
     console.error('Error retrieving transactions:', error.response?.data ?? error.message);
     throw error;
+  }
+
+  async function getUsingAxios(response: any) {
+    response = await axios.get(apiUrl, {
+      // params: { order, page },
+      headers: {
+        'accept': 'application/json, text/plain, */*',
+        'cookie': process.env.COOKIE,
+        'user-agent': userAgent,
+        'x-auth-token': authToken,
+        'x-portfolio-token': portfolioToken
+      },
+    });
+    return response.data;
+  }
+
+  function getResponseUsingCurl(response: any) {
+    const curlCommand = `
+      curl --location '${apiUrl}${page}'  \
+      --header 'accept: application/json, text/plain, */*' \
+      --header 'cookie: ${process.env.COOKIE}' \
+      --header 'user-agent: ${userAgent}' \
+      --header 'x-auth-token: ${authToken}' \
+      --header 'x-portfolio-token: ${portfolioToken}'`;
+
+    const curlReponse = execSync(curlCommand);
+    response = JSON.parse(curlReponse.toString());
+    return response;
   }
 }
 
@@ -74,7 +96,7 @@ getKoinlyTransactions()
           transaction.fee_worth,
           transaction.gain,
           transaction.label,
-          transaction.description,
+          transaction.description?.replace(/\n/g, ' '),
           transaction.synced,
           transaction.manual,
           transaction.txhash,
