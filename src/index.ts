@@ -12,7 +12,7 @@ const authToken = process.env.AUTH_TOKEN;
 const portfolioToken = process.env.PORTOFILIO_ID;
 const cookies = process.env.COOKIES;
 const userAgent =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 const DEBUG = process.env.DEBUG === "true" || false;
 
 async function getKoinlyTransactions(): Promise<Transactions> {
